@@ -35,6 +35,14 @@ import java.util.Set;
 @HasInternalProtocol
 public interface FileTree extends FileCollection {
     /**
+     * Strategy for handling symbolic links. Either traverses the file/directory referenced by the symbolic link or
+     * traverses the symbolic link itself.
+     */
+    enum SymlinkStrategy {
+        FOLLOW, PRESERVE
+    }
+
+    /**
      * <p>Restricts the contents of this tree to those files matching the given filter. The filtered tree is live, so
      * that any changes to this tree are reflected in the filtered tree.</p>
      *
