@@ -51,6 +51,13 @@ public abstract class AbstractFileTreeElement implements FileTreeElement {
         return getRelativePath().getPathString();
     }
 
+    public Type getType() {
+        if (isDirectory())
+            return Type.DIRECTORY;
+        else
+            return Type.REGULAR_FILE;
+    }
+
     public void copyTo(OutputStream output) {
         try {
             InputStream inputStream = open();

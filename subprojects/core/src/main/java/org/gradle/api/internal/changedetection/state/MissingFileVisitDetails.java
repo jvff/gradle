@@ -55,6 +55,11 @@ class MissingFileVisitDetails implements FileVisitDetails {
     }
 
     @Override
+    public Type getType() {
+        return Type.REGULAR_FILE;
+    }
+
+    @Override
     public RelativePath getRelativePath() {
         return relativePath;
     }
