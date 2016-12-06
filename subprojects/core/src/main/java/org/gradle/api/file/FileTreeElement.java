@@ -110,4 +110,11 @@ public interface FileTreeElement {
      * @return The Unix file permissions.
      */
     int getMode();
+
+    /**
+     * Returns the type of this file. Always returns either REGULAR_FILE or DIRECTORY
+     *
+     * @return The file type. Never returns null.
+     */
+    Type getType();
 }
