@@ -113,6 +113,17 @@ public interface FileTree extends FileCollection {
     FileTree visit(Action<? super FileVisitDetails> visitor);
 
     /**
+     * Visits the files and directories in this file tree. Files are visited in depth-first prefix order, so that a directory
+     * is visited before its children. Symbolic links are visited according to the specified {@link SymlinkStrategy}. The
+     * file/directory to be visited is passed to the given action as a {@link FileVisitDetails}
+     *
+     * @param visitor The visitor.
+     * @param strategy The symbolic link traversal strategy.
+     * @return this
+     */
+    FileTree visit(Action<? super FileVisitDetails> visitor, SymlinkStrategy strategy);
+
+    /**
      * Returns a {@code FileTree} which contains the union of this tree and the given tree. The returned tree is live,
      * so that changes to either this tree or the other source tree are reflected in the returned tree.
      *

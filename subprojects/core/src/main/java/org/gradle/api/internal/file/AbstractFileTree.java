@@ -134,6 +134,11 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
     }
 
     @Override
+    public FileTree visit(Action<? super FileVisitDetails> visitor, SymlinkStrategy strategy) {
+        return visit(visitor);
+    }
+
+    @Override
     public void visitTreeOrBackingFile(FileVisitor visitor) {
         visit(visitor);
     }
