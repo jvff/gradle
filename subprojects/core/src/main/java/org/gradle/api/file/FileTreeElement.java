@@ -24,6 +24,13 @@ import java.io.OutputStream;
  */
 public interface FileTreeElement {
     /**
+     * File types allowed in a file tree
+     */
+    enum Type {
+        REGULAR_FILE, DIRECTORY, SYMBOLIC_LINK
+    }
+
+    /**
      * Returns the file being visited.
      *
      * @return The file. Never returns null.
