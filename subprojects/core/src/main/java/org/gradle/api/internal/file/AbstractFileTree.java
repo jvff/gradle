@@ -133,9 +133,28 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
         });
     }
 
-    @Override
     public FileTree visit(Action<? super FileVisitDetails> visitor, SymlinkStrategy strategy) {
         return visit(visitor);
+    }
+
+    @Override
+    public FileTree visit(final FileVisitor visitor) {
+        return visit(new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symlinkDetails) {
+                visitor.visitFile(symlinkDetails);
+            }
+        });
     }
 
     @Override
@@ -167,8 +186,8 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
             return fileTree.getBuildDependencies();
         }
 
-        public FileTree visit(final FileVisitor visitor) {
-            fileTree.visit(new FileVisitor() {
+        public FileTree visit(final SymlinkAwareFileVisitor visitor) {
+            fileTree.visit(new SymlinkAwareFileVisitor() {
                 public void visitDir(FileVisitDetails dirDetails) {
                     if (spec.isSatisfiedBy(dirDetails)) {
                         visitor.visitDir(dirDetails);
@@ -178,6 +197,12 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
                 public void visitFile(FileVisitDetails fileDetails) {
                     if (spec.isSatisfiedBy(fileDetails)) {
                         visitor.visitFile(fileDetails);
+                    }
+                }
+
+                public void visitSymbolicLink(FileVisitDetails symlinkDetails) {
+                    if (spec.isSatisfiedBy(symlinkDetails)) {
+                        visitor.visitSymbolicLink(symlinkDetails);
                     }
                 }
             });
