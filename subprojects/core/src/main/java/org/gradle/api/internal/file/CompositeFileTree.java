@@ -68,7 +68,10 @@ public abstract class CompositeFileTree extends CompositeFileCollection implemen
 
     @Override
     public FileTree visit(Action<? super FileVisitDetails> visitor, SymlinkStrategy strategy) {
-        return visit(visitor);
+        for (FileTree tree : getSourceCollections()) {
+            tree.visit(visitor, strategy);
+        }
+        return this;
     }
 
     public FileTree visit(FileVisitor visitor) {
