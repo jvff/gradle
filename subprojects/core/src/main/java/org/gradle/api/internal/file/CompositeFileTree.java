@@ -20,6 +20,7 @@ import org.gradle.api.Action;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.ClosureBackedAction;
 import org.gradle.api.internal.file.collections.FileCollectionResolveContext;
 import org.gradle.api.internal.file.collections.ResolvableFileCollectionResolveContext;
@@ -66,7 +67,15 @@ public abstract class CompositeFileTree extends CompositeFileCollection implemen
         return this;
     }
 
+    @Override
     public FileTree visit(FileVisitor visitor) {
+        for (FileTree tree : getSourceCollections()) {
+            tree.visit(visitor);
+        }
+        return this;
+    }
+
+    public FileTree visit(SymlinkAwareFileVisitor visitor) {
         for (FileTree tree : getSourceCollections()) {
             tree.visit(visitor);
         }

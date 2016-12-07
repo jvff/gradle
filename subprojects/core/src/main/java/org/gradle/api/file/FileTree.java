@@ -85,6 +85,15 @@ public interface FileTree extends FileCollection {
     FileTree visit(FileVisitor visitor);
 
     /**
+     * Visits the files and directories in this file tree, allowing symbolic links to be handled separately. Files are
+     * visited in a depth-first prefix order, so that a directory is visited before its children.
+     *
+     * @param visitor The visitor.
+     * @return this
+     */
+    FileTree visit(SymlinkAwareFileVisitor visitor);
+
+    /**
      * Visits the files and directories in this file tree. Files are visited in depth-first prefix order, so that a directory
      * is visited before its children. The file/directory to be visited is passed to the given closure as a {@link
      * FileVisitDetails}
