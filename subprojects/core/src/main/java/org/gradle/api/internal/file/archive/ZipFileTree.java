@@ -23,6 +23,7 @@ import org.gradle.api.UncheckedIOException;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.AbstractFileTreeElement;
 import org.gradle.api.internal.file.FileSystemSubset;
 import org.gradle.api.internal.file.collections.*;
@@ -39,7 +40,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ZipFileTree extends AbstractMinimalFileTree implements FileSystemMirroringFileTree {
+public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree {
     private final File zipFile;
     private final Chmod chmod;
     private final DirectoryFileTreeFactory directoryFileTreeFactory;
@@ -61,7 +62,26 @@ public class ZipFileTree extends AbstractMinimalFileTree implements FileSystemMi
         return directoryFileTreeFactory.create(tmpDir);
     }
 
-    public void visit(FileVisitor visitor) {
+    public void visit(final FileVisitor visitor) {
+        visit(new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symlinkDetails) {
+                visitor.visitFile(symlinkDetails);
+            }
+        });
+    }
+
+    public void visit(SymlinkAwareFileVisitor visitor) {
         if (!zipFile.exists()) {
             throw new InvalidUserDataException(String.format("Cannot expand %s as it does not exist.", getDisplayName()));
         }
@@ -87,6 +107,8 @@ public class ZipFileTree extends AbstractMinimalFileTree implements FileSystemMi
                     ZipEntry entry = sortedEntries.next();
                     if (entry.isDirectory()) {
                         visitor.visitDir(new DetailsImpl(entry, zip, stopFlag, chmod));
+                    } else if (isSymlink(entry)) {
+                        visitor.visitSymbolicLink(new DetailsImpl(entry, zip, stopFlag, chmod));
                     } else {
                         visitor.visitFile(new DetailsImpl(entry, zip, stopFlag, chmod));
                     }
@@ -97,6 +119,16 @@ public class ZipFileTree extends AbstractMinimalFileTree implements FileSystemMi
         } catch (Exception e) {
             throw new GradleException(String.format("Could not expand %s.", getDisplayName()), e);
         }
+    }
+
+    private boolean isSymlink(ZipEntry entry) {
+        final int SYMLINK_TYPE_MASK = 0xa000;
+
+        int entryMode = entry.getUnixMode();
+        int symlinkTypeBitTest = entryMode & SYMLINK_TYPE_MASK;
+        boolean symlinkTypeBitsAreSet = symlinkTypeBitTest == SYMLINK_TYPE_MASK;
+
+        return symlinkTypeBitsAreSet;
     }
 
     private File getBackingFile() {
