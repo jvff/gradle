@@ -23,6 +23,7 @@ import org.gradle.api.Nullable;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.AbstractFileTreeElement;
 import org.gradle.api.internal.file.DefaultFileVisitDetails;
 import org.gradle.api.internal.file.FileSystemSubset;
@@ -39,7 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TarFileTree extends AbstractMinimalFileTree implements FileSystemMirroringFileTree {
+public class TarFileTree implements MinimalFileTree, FileSystemMirroringFileTree {
     private final File tarFile;
     private final ReadableResourceInternal resource;
     private final Chmod chmod;
@@ -65,7 +66,26 @@ public class TarFileTree extends AbstractMinimalFileTree implements FileSystemMi
         return directoryFileTreeFactory.create(tmpDir);
     }
 
-    public void visit(FileVisitor visitor) {
+    public void visit(final FileVisitor visitor) {
+        visit(new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symlinkDetails) {
+                visitor.visitFile(symlinkDetails);
+            }
+        });
+    }
+
+    public void visit(SymlinkAwareFileVisitor visitor) {
         InputStream inputStream;
         try {
             inputStream = resource.read();
@@ -88,13 +108,17 @@ public class TarFileTree extends AbstractMinimalFileTree implements FileSystemMi
         }
     }
 
-    private void visitImpl(FileVisitor visitor, InputStream inputStream) throws IOException {
+    private void visitImpl(SymlinkAwareFileVisitor visitor, InputStream inputStream) throws IOException {
         AtomicBoolean stopFlag = new AtomicBoolean();
         NoCloseTarInputStream tar = new NoCloseTarInputStream(inputStream);
         TarEntry entry;
         while (!stopFlag.get() && (entry = tar.getNextEntry()) != null) {
+            String linkName = entry.getLinkName();
+
             if (entry.isDirectory()) {
                 visitor.visitDir(new DetailsImpl(entry, tar, stopFlag, chmod));
+            } else if (linkName == null || linkName.equals("")) {
+                visitor.visitSymbolicLink(new DetailsImpl(entry, tar, stopFlag, chmod));
             } else {
                 visitor.visitFile(new DetailsImpl(entry, tar, stopFlag, chmod));
             }
