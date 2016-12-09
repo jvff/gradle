@@ -148,7 +148,7 @@ public class MapFileTree extends AbstractMinimalFileTree implements FileSystemMi
         private final boolean isDirectory;
 
         public FileVisitDetailsImpl(RelativePath path, Action<OutputStream> generator, AtomicBoolean stopFlag, Chmod chmod) {
-            super(chmod);
+            super(chmod, generator == null ? Type.DIRECTORY : Type.REGULAR_FILE);
             this.path = path;
             this.generator = generator;
             this.stopFlag = stopFlag;

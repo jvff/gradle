@@ -20,6 +20,7 @@ import org.apache.tools.zip.ZipFile;
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.UncheckedIOException;
+import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
@@ -105,12 +106,14 @@ public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree
                 Iterator<ZipEntry> sortedEntries = entriesByName.values().iterator();
                 while (!stopFlag.get() && sortedEntries.hasNext()) {
                     ZipEntry entry = sortedEntries.next();
-                    if (entry.isDirectory()) {
-                        visitor.visitDir(new DetailsImpl(entry, zip, stopFlag, chmod));
-                    } else if (isSymlink(entry)) {
-                        visitor.visitSymlink(new DetailsImpl(entry, zip, stopFlag, chmod));
+                    DetailsImpl details = new DetailsImpl(entry, zip, stopFlag, chmod);
+                    FileTreeElement.Type type = details.getType();
+                    if (type == FileTreeElement.Type.DIRECTORY) {
+                        visitor.visitDir(details);
+                    } else if (type == FileTreeElement.Type.SYMBOLIC_LINK) {
+                        visitor.visitSymlink(details);
                     } else {
-                        visitor.visitFile(new DetailsImpl(entry, zip, stopFlag, chmod));
+                        visitor.visitFile(details);
                     }
                 }
             } finally {
@@ -118,6 +121,20 @@ public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree
             }
         } catch (Exception e) {
             throw new GradleException(String.format("Could not expand %s.", getDisplayName()), e);
+        }
+    }
+
+    private File getBackingFile() {
+        return zipFile;
+    }
+
+    private FileTreeElement.Type typeOf(ZipEntry entry) {
+        if (entry.isDirectory()) {
+            return FileTreeElement.Type.DIRECTORY;
+        } else if (isSymlink(entry)) {
+            return FileTreeElement.Type.SYMBOLIC_LINK;
+        } else {
+            return FileTreeElement.Type.REGULAR_FILE;
         }
     }
 
@@ -131,10 +148,6 @@ public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         return symlinkTypeBitsAreSet;
     }
 
-    private File getBackingFile() {
-        return zipFile;
-    }
-
     private class DetailsImpl extends AbstractFileTreeElement implements FileVisitDetails {
         private final ZipEntry entry;
         private final ZipFile zip;
@@ -142,7 +155,7 @@ public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         private File file;
 
         public DetailsImpl(ZipEntry entry, ZipFile zip, AtomicBoolean stopFlag, Chmod chmod) {
-            super(chmod);
+            super(chmod, typeOf(entry));
             this.entry = entry;
             this.zip = zip;
             this.stopFlag = stopFlag;

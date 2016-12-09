@@ -38,7 +38,7 @@ public class DefaultFileCopyDetails extends AbstractFileTreeElement implements F
     private DuplicatesStrategy duplicatesStrategy;
 
     public DefaultFileCopyDetails(FileVisitDetails fileDetails, CopySpecResolver specResolver, Chmod chmod) {
-        super(chmod);
+        super(chmod, fileDetails.getType());
         this.filterChain = new FilterChain(specResolver.getFilteringCharset());
         this.fileDetails = fileDetails;
         this.specResolver = specResolver;

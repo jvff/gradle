@@ -23,6 +23,8 @@ import org.gradle.util.GFileUtils;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Files;
 
 public class DefaultFileTreeElement extends AbstractFileTreeElement {
     private final File file;
@@ -30,7 +32,7 @@ public class DefaultFileTreeElement extends AbstractFileTreeElement {
     private final Stat stat;
 
     public DefaultFileTreeElement(File file, RelativePath relativePath, Chmod chmod, Stat stat) {
-        this(file, relativePath, typeOf(file), chmod, stat);
+        this(file, relativePath, chmod, typeOf(file), stat);
     }
 
     public DefaultFileTreeElement(File file, RelativePath relativePath, Chmod chmod, Type type, Stat stat) {
@@ -42,15 +44,15 @@ public class DefaultFileTreeElement extends AbstractFileTreeElement {
 
     public static DefaultFileTreeElement of(File file, FileSystem fileSystem) {
         RelativePath path = RelativePath.parse(!file.isDirectory(), file.getAbsolutePath());
-        return new DefaultFileTreeElement(file, path, typeOf(file), fileSystem, fileSystem);
+        return new DefaultFileTreeElement(file, path, fileSystem, typeOf(file), fileSystem);
     }
 
     private static Type typeOf(File file) {
         Path path = file.toPath();
 
-        if (path.isSymbolicLink())
+        if (Files.isSymbolicLink(path))
             return Type.SYMBOLIC_LINK;
-        else if (path.isDirectory())
+        else if (Files.isDirectory(path))
             return Type.DIRECTORY;
         else
             return Type.REGULAR_FILE;
