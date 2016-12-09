@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A file tree with a single file entry.
  */
-public class SingletonFileTree implements MinimalFileTree {
+public class SingletonFileTree extends AbstractMinimalFileTree {
     private final File file;
     private final FileSystem fileSystem = FileSystems.getDefault();
 

@@ -16,6 +16,7 @@
 package org.gradle.api.internal.file.collections;
 
 import org.gradle.api.file.FileVisitor;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.FileSystemSubset;
 
 /**
@@ -32,6 +33,12 @@ public interface MinimalFileTree extends MinimalFileCollection {
      * Visits the elements of this tree, in depth-first prefix order.
      */
     void visit(FileVisitor visitor);
+
+    /**
+     * Visits the elements of this tree, in depth-first prefix order, handling symbolic links separately from
+     * regular files.
+     */
+    void visit(SymlinkAwareFileVisitor visitor);
 
     void registerWatchPoints(FileSystemSubset.Builder builder);
 
