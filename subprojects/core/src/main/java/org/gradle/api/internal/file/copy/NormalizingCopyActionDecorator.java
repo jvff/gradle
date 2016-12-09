@@ -109,7 +109,7 @@ public class NormalizingCopyActionDecorator implements CopyAction {
         private long lastModified = System.currentTimeMillis();
 
         private StubbedFileCopyDetails(RelativePath path, boolean includeEmptyDirs, Chmod chmod) {
-            super(chmod);
+            super(chmod, Type.DIRECTORY);
             this.path = path;
             this.includeEmptyDirs = includeEmptyDirs;
         }

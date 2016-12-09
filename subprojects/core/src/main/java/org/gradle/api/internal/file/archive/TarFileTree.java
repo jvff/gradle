@@ -20,6 +20,8 @@ import org.apache.tools.tar.TarInputStream;
 import org.gradle.api.GradleException;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Nullable;
+import org.gradle.api.file.FileTreeElement;
+import org.gradle.api.file.FileTreeElement.Type;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
@@ -113,14 +115,14 @@ public class TarFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         NoCloseTarInputStream tar = new NoCloseTarInputStream(inputStream);
         TarEntry entry;
         while (!stopFlag.get() && (entry = tar.getNextEntry()) != null) {
-            String linkName = entry.getLinkName();
-
-            if (entry.isDirectory()) {
-                visitor.visitDir(new DetailsImpl(entry, tar, stopFlag, chmod));
-            } else if (linkName == null || linkName.equals("")) {
-                visitor.visitSymbolicLink(new DetailsImpl(entry, tar, stopFlag, chmod));
+            Type type = typeOf(entry);
+            DetailsImpl visitDetails = new DetailsImpl(entry, tar, stopFlag, chmod, type);
+            if (type == Type.DIRECTORY) {
+                visitor.visitDir(visitDetails);
+            } else if (type == Type.SYMBOLIC_LINK) {
+                visitor.visitSymbolicLink(visitDetails);
             } else {
-                visitor.visitFile(new DetailsImpl(entry, tar, stopFlag, chmod));
+                visitor.visitFile(visitDetails);
             }
         }
     }
@@ -135,6 +137,22 @@ public class TarFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         return null;
     }
 
+    private Type typeOf(TarEntry entry) {
+        if (entry.isDirectory()) {
+            return Type.DIRECTORY;
+        } else if (isSymlink(entry)) {
+            return Type.SYMBOLIC_LINK;
+        } else {
+            return Type.REGULAR_FILE;
+        }
+    }
+
+    private boolean isSymlink(TarEntry entry) {
+        String linkName = entry.getLinkName();
+
+        return linkName != null && !linkName.equals("");
+    }
+
     private class DetailsImpl extends AbstractFileTreeElement implements FileVisitDetails {
         private final TarEntry entry;
         private final NoCloseTarInputStream tar;
@@ -142,8 +160,8 @@ public class TarFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         private File file;
         private boolean read;
 
-        public DetailsImpl(TarEntry entry, NoCloseTarInputStream tar, AtomicBoolean stopFlag, Chmod chmod) {
-            super(chmod);
+        public DetailsImpl(TarEntry entry, NoCloseTarInputStream tar, AtomicBoolean stopFlag, Chmod chmod, Type type) {
+            super(chmod, type);
             this.entry = entry;
             this.tar = tar;
             this.stopFlag = stopFlag;
