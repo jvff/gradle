@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree {
+public class ZipFileTree extends AbstractMinimalFileTree implements FileSystemMirroringFileTree {
     private final File zipFile;
     private final Chmod chmod;
     private final DirectoryFileTreeFactory directoryFileTreeFactory;

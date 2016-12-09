@@ -39,7 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class TarFileTree implements MinimalFileTree, FileSystemMirroringFileTree {
+public class TarFileTree extends AbstractMinimalFileTree implements FileSystemMirroringFileTree {
     private final File tarFile;
     private final ReadableResourceInternal resource;
     private final Chmod chmod;

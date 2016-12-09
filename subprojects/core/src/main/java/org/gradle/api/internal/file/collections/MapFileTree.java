@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A {@link MinimalFileTree} which is composed using a mapping from relative path to file source.
  */
-public class MapFileTree implements MinimalFileTree, FileSystemMirroringFileTree {
+public class MapFileTree extends AbstractMinimalFileTree implements FileSystemMirroringFileTree {
     private final Map<RelativePath, Action<OutputStream>> elements = new LinkedHashMap<RelativePath, Action<OutputStream>>();
     private final Factory<File> tmpDirSource;
     private final Chmod chmod;

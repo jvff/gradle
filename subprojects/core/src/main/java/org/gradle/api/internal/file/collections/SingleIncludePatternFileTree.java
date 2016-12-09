@@ -42,7 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * exhaustively scan a directory hierarchy if, and from the point where,
  * a '**' pattern is encountered.
  */
-public class SingleIncludePatternFileTree implements MinimalFileTree {
+public class SingleIncludePatternFileTree extends AbstractMinimalFileTree {
     private final File baseDir;
     private final String includePattern;
     private final List<String> patternSegments;
