@@ -27,11 +27,13 @@ import java.io.*;
 
 public abstract class AbstractFileTreeElement implements FileTreeElement {
     private final Chmod chmod;
+    private final Type type;
 
     public abstract String getDisplayName();
 
-    protected AbstractFileTreeElement(Chmod chmod) {
+    protected AbstractFileTreeElement(Chmod chmod, Type type) {
         this.chmod = chmod;
+        this.type = type;
     }
 
     protected Chmod getChmod() {
@@ -51,11 +53,12 @@ public abstract class AbstractFileTreeElement implements FileTreeElement {
         return getRelativePath().getPathString();
     }
 
+    public boolean isDirectory() {
+        return type == Type.DIRECTORY;
+    }
+
     public Type getType() {
-        if (isDirectory())
-            return Type.DIRECTORY;
-        else
-            return Type.REGULAR_FILE;
+        return type;
     }
 
     public void copyTo(OutputStream output) {
