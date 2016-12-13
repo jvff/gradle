@@ -22,6 +22,7 @@ import org.gradle.api.Transformer;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.AbstractFileTreeElement;
 import org.gradle.api.internal.file.FileSystemSubset;
 import org.gradle.internal.Factory;
@@ -44,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * A {@link MinimalFileTree} which is composed using a mapping from relative path to file source.
  */
-public class MapFileTree extends AbstractMinimalFileTree implements FileSystemMirroringFileTree {
+public class MapFileTree implements MinimalFileTree, FileSystemMirroringFileTree {
     private final Map<RelativePath, Action<OutputStream>> elements = new LinkedHashMap<RelativePath, Action<OutputStream>>();
     private final Factory<File> tmpDirSource;
     private final Chmod chmod;
@@ -72,6 +73,10 @@ public class MapFileTree extends AbstractMinimalFileTree implements FileSystemMi
 
     public DirectoryFileTree getMirror() {
         return new DirectoryFileTree(getTmpDir());
+    }
+
+    public void visit(SymlinkAwareFileVisitor visitor) {
+        visit((FileVisitor) visitor);
     }
 
     public void visit(FileVisitor visitor) {
