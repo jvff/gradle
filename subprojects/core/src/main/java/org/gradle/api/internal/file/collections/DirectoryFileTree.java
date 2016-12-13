@@ -16,6 +16,7 @@
 
 package org.gradle.api.internal.file.collections;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.file.DirectoryTree;
 import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.FileVisitDetails;
@@ -36,7 +37,9 @@ import org.gradle.internal.nativeintegration.services.FileSystems;
 import org.gradle.util.GUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -153,8 +156,39 @@ public class DirectoryFileTree implements MinimalFileTree, PatternFilterableFile
         visitFrom(wrapFileVisitor(visitor), dir, RelativePath.EMPTY_ROOT);
     }
 
-    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
-        throw new UnsupportedOperationException("Not yet implemented");
+    public void visitFollowingSymbolicLinks(final FileVisitor visitor) {
+        final SymlinkAwareFileVisitor symlinkFollowingVisitor = new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symbolicLinkDetails) {
+                Path symbolicLink = symbolicLinkDetails.getFile().toPath();
+
+                try {
+                    Path targetPath = Files.readSymbolicLink(symbolicLink);
+                    File targetFileOrDirectory = targetPath.toFile();
+
+                    if (targetFileOrDirectory.exists()) {
+                        RelativePath relativePath = symbolicLinkDetails.getRelativePath();
+                        visitFrom(this, targetFileOrDirectory, relativePath);
+                    } else {
+                        throw new GradleException(String.format("File or directory '%s', referenced by symbolic link '%s', not found",
+                                targetFileOrDirectory, symbolicLink));
+                    }
+                } catch (IOException cause) {
+                    throw new GradleException(String.format("Failed to read target of symbolic link '%s'", symbolicLink), cause);
+                }
+            }
+        };
+        visitFrom(symlinkFollowingVisitor, dir, RelativePath.EMPTY_ROOT);
     }
 
     public void visit(SymlinkAwareFileVisitor visitor) {
