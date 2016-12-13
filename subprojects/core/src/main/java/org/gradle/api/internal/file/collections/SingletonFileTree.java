@@ -17,18 +17,20 @@ package org.gradle.api.internal.file.collections;
 
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.DefaultFileVisitDetails;
 import org.gradle.api.internal.file.FileSystemSubset;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.nativeintegration.services.FileSystems;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A file tree with a single file entry.
  */
-public class SingletonFileTree extends AbstractMinimalFileTree {
+public class SingletonFileTree implements MinimalFileTree {
     private final File file;
     private final FileSystem fileSystem = FileSystems.getDefault();
 
@@ -42,6 +44,15 @@ public class SingletonFileTree extends AbstractMinimalFileTree {
 
     public void visit(FileVisitor visitor) {
         visitor.visitFile(new SingletonFileVisitDetails(file, fileSystem, false));
+    }
+
+    public void visit(SymlinkAwareFileVisitor visitor) {
+        SingletonFileVisitDetails visitDetails = new SingletonFileVisitDetails(file, fileSystem, false);
+
+        if (Files.isSymbolicLink(file.toPath()))
+            visitor.visitSymbolicLink(visitDetails);
+        else
+            visitor.visitFile(visitDetails);
     }
 
     @Override
