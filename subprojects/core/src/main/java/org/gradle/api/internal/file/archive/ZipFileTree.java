@@ -83,6 +83,10 @@ public class ZipFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         });
     }
 
+    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     public void visit(SymlinkAwareFileVisitor visitor) {
         if (!zipFile.exists()) {
             throw new InvalidUserDataException(String.format("Cannot expand %s as it does not exist.", getDisplayName()));

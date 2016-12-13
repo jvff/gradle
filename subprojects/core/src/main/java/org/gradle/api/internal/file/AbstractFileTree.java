@@ -158,6 +158,14 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
     }
 
     @Override
+    public FileTree visit(FileVisitor visitor, SymlinkStrategy strategy) {
+        if (strategy == SymlinkStrategy.PRESERVE)
+            return visit(visitor);
+        else
+            return visitFollowingSymbolicLinks(visitor);
+    }
+
+    @Override
     public void visitTreeOrBackingFile(FileVisitor visitor) {
         visit(visitor);
     }
@@ -166,6 +174,8 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
     public void visitRootElements(FileCollectionVisitor visitor) {
         visitor.visitTree(this);
     }
+
+    protected abstract FileTree visitFollowingSymbolicLinks(FileVisitor visitor);
 
     private static class FilteredFileTreeImpl extends AbstractFileTree {
         private final AbstractFileTree fileTree;
@@ -203,6 +213,24 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
                 public void visitSymbolicLink(FileVisitDetails symlinkDetails) {
                     if (spec.isSatisfiedBy(symlinkDetails)) {
                         visitor.visitSymbolicLink(symlinkDetails);
+                    }
+                }
+            });
+            return this;
+        }
+
+        @Override
+        public FileTree visitFollowingSymbolicLinks(final FileVisitor visitor) {
+            fileTree.visitFollowingSymbolicLinks(new FileVisitor() {
+                public void visitDir(FileVisitDetails dirDetails) {
+                    if (spec.isSatisfiedBy(dirDetails)) {
+                        visitor.visitDir(dirDetails);
+                    }
+                }
+
+                public void visitFile(FileVisitDetails fileDetails) {
+                    if (spec.isSatisfiedBy(fileDetails)) {
+                        visitor.visitFile(fileDetails);
                     }
                 }
             });

@@ -86,6 +86,10 @@ public class SingleIncludePatternFileTree implements MinimalFileTree {
         doVisit(symlinkAwareVisitor, baseDir, new LinkedList<String>(), 0, new AtomicBoolean());
     }
 
+    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     public void visit(SymlinkAwareFileVisitor visitor) {
         doVisit(visitor, baseDir, new LinkedList<String>(), 0, new AtomicBoolean());
     }

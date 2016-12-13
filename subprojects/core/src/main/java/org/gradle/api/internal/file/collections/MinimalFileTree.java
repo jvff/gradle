@@ -35,6 +35,11 @@ public interface MinimalFileTree extends MinimalFileCollection {
     void visit(FileVisitor visitor);
 
     /**
+     * Visits the elements of this tree, in depth-first prefix order while following all symbolic links.
+     */
+    void visitFollowingSymbolicLinks(FileVisitor visitor);
+
+    /**
      * Visits the elements of this tree, in depth-first prefix order, handling symbolic links separately from
      * regular files.
      */

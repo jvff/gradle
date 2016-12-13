@@ -153,6 +153,10 @@ public class DirectoryFileTree implements MinimalFileTree, PatternFilterableFile
         visitFrom(wrapFileVisitor(visitor), dir, RelativePath.EMPTY_ROOT);
     }
 
+    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     public void visit(SymlinkAwareFileVisitor visitor) {
         visitFrom(visitor, dir, RelativePath.EMPTY_ROOT);
     }

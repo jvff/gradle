@@ -46,6 +46,10 @@ public class SingletonFileTree implements MinimalFileTree {
         visitor.visitFile(new SingletonFileVisitDetails(file, fileSystem, false));
     }
 
+    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     public void visit(SymlinkAwareFileVisitor visitor) {
         SingletonFileVisitDetails visitDetails = new SingletonFileVisitDetails(file, fileSystem, false);
 

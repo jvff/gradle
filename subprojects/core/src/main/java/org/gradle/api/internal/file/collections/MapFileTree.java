@@ -92,6 +92,10 @@ public class MapFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         }
     }
 
+    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     public Set<File> getFilesWithoutCreating() {
         return CollectionUtils.collect(elements.keySet(), new Transformer<File, RelativePath>() {
             @Override

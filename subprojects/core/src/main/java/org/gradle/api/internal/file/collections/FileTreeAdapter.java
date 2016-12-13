@@ -112,6 +112,11 @@ public class FileTreeAdapter extends AbstractFileTree implements FileCollectionC
         return this;
     }
 
+    public FileTree visitFollowingSymbolicLinks(FileVisitor visitor) {
+        tree.visitFollowingSymbolicLinks(visitor);
+        return this;
+    }
+
     @Override
     public void visitRootElements(FileCollectionVisitor visitor) {
         if (tree instanceof DirectoryFileTree) {

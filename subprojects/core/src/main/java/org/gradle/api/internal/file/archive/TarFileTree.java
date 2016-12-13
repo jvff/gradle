@@ -87,6 +87,10 @@ public class TarFileTree implements MinimalFileTree, FileSystemMirroringFileTree
         });
     }
 
+    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     public void visit(SymlinkAwareFileVisitor visitor) {
         InputStream inputStream;
         try {
