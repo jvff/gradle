@@ -21,6 +21,7 @@ import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.DefaultFileVisitDetails;
 import org.gradle.api.internal.file.FileSystemSubset;
 import org.gradle.api.logging.Logger;
@@ -35,6 +36,7 @@ import org.gradle.internal.nativeintegration.services.FileSystems;
 import org.gradle.util.GUtil;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +49,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * A file or directory will only be visited if it matches all includes and no
  * excludes.
  */
-public class DirectoryFileTree extends AbstractMinimalFileTree implements PatternFilterableFileTree, RandomAccessFileCollection, LocalFileTree, DirectoryTree {
+public class DirectoryFileTree implements MinimalFileTree, PatternFilterableFileTree, RandomAccessFileCollection, LocalFileTree, DirectoryTree {
     private static final Logger LOGGER = Logging.getLogger(DirectoryFileTree.class);
     private static final Factory<DirectoryWalker> DEFAULT_DIRECTORY_WALKER_FACTORY = new DefaultDirectoryWalkerFactory();
 
@@ -128,7 +130,30 @@ public class DirectoryFileTree extends AbstractMinimalFileTree implements Patter
         visit(visitor);
     }
 
-    public void visit(FileVisitor visitor) {
+    private SymlinkAwareFileVisitor wrapFileVisitor(final FileVisitor visitor) {
+        return new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symbolicLinkDetails) {
+                visitor.visitFile(symbolicLinkDetails);
+            }
+        };
+    }
+
+    public void visit(final FileVisitor visitor) {
+        visitFrom(wrapFileVisitor(visitor), dir, RelativePath.EMPTY_ROOT);
+    }
+
+    public void visit(SymlinkAwareFileVisitor visitor) {
         visitFrom(visitor, dir, RelativePath.EMPTY_ROOT);
     }
 
@@ -138,16 +163,35 @@ public class DirectoryFileTree extends AbstractMinimalFileTree implements Patter
      * the listener.  If it is a file, the file will be checked and notified.
      */
     public void visitFrom(FileVisitor visitor, File fileOrDirectory, RelativePath path) {
+        visitFrom(wrapFileVisitor(visitor), fileOrDirectory, path);
+    }
+
+    /**
+     * Process the specified file or directory.  If it is a directory, then its contents
+     * (but not the directory itself) will be checked with {@link #isAllowed(FileTreeElement, Spec)} and notified to
+     * the listener.  If it is a file, the file will be checked and notified.
+     */
+    public void visitFrom(SymlinkAwareFileVisitor visitor, File fileOrDirectory, RelativePath path) {
         AtomicBoolean stopFlag = new AtomicBoolean();
         Spec<FileTreeElement> spec = patternSet.getAsSpec();
         if (fileOrDirectory.exists()) {
-            if (fileOrDirectory.isFile()) {
+            if (Files.isSymbolicLink(fileOrDirectory.toPath())) {
+                processSymbolicLink(fileOrDirectory, visitor, spec, stopFlag);
+            } else if (fileOrDirectory.isFile()) {
                 processSingleFile(fileOrDirectory, visitor, spec, stopFlag);
             } else {
                 walkDir(fileOrDirectory, path, visitor, spec, stopFlag);
             }
         } else {
             LOGGER.info("file or directory '{}', not found", fileOrDirectory);
+        }
+    }
+
+    private void processSymbolicLink(File file, SymlinkAwareFileVisitor visitor, Spec<FileTreeElement> spec, AtomicBoolean stopFlag) {
+        RelativePath path = new RelativePath(true, file.getName());
+        FileVisitDetails details = new DefaultFileVisitDetails(file, path, stopFlag, fileSystem, fileSystem, false);
+        if (isAllowed(details, spec)) {
+            visitor.visitSymbolicLink(details);
         }
     }
 
