@@ -15,16 +15,21 @@
  */
 package org.gradle.api.internal.file.collections;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
 import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.DefaultFileVisitDetails;
 import org.gradle.api.internal.file.FileSystemSubset;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.nativeintegration.services.FileSystems;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -47,7 +52,23 @@ public class SingletonFileTree implements MinimalFileTree {
     }
 
     public void visitFollowingSymbolicLinks(FileVisitor visitor) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        File fileToVisit = tryToFollowSymbolicLink();
+
+        visitor.visitFile(new SingletonFileVisitDetails(fileToVisit, fileSystem, false));
+    }
+
+    private File tryToFollowSymbolicLink() {
+        Path filePath = file.toPath();
+
+        if (Files.isSymbolicLink(filePath)) {
+            try {
+                return Files.readSymbolicLink(filePath).toFile();
+            } catch (IOException cause) {
+                throw new GradleException(String.format("Failed to read target of symbolic link '%s'", file), cause);
+            }
+        }
+
+        return file;
     }
 
     public void visit(SymlinkAwareFileVisitor visitor) {
