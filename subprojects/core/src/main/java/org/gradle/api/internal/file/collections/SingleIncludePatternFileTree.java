@@ -20,6 +20,7 @@ import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.DefaultFileVisitDetails;
 import org.gradle.api.internal.file.FileSystemSubset;
 import org.gradle.api.internal.file.pattern.PatternStep;
@@ -31,6 +32,7 @@ import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.nativeintegration.services.FileSystems;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * exhaustively scan a directory hierarchy if, and from the point where,
  * a '**' pattern is encountered.
  */
-public class SingleIncludePatternFileTree extends AbstractMinimalFileTree {
+public class SingleIncludePatternFileTree implements MinimalFileTree {
     private final File baseDir;
     private final String includePattern;
     private final List<String> patternSegments;
@@ -63,11 +65,32 @@ public class SingleIncludePatternFileTree extends AbstractMinimalFileTree {
         this.excludeSpec = excludeSpec;
     }
 
-    public void visit(FileVisitor visitor) {
+    public void visit(final FileVisitor visitor) {
+        SymlinkAwareFileVisitor symlinkAwareVisitor = new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symbolicLinkDetails) {
+                visitor.visitFile(symbolicLinkDetails);
+            }
+        };
+
+        doVisit(symlinkAwareVisitor, baseDir, new LinkedList<String>(), 0, new AtomicBoolean());
+    }
+
+    public void visit(SymlinkAwareFileVisitor visitor) {
         doVisit(visitor, baseDir, new LinkedList<String>(), 0, new AtomicBoolean());
     }
 
-    private void doVisit(FileVisitor visitor, File file, LinkedList<String> relativePath, int segmentIndex, AtomicBoolean stopFlag) {
+    private void doVisit(SymlinkAwareFileVisitor visitor, File file, LinkedList<String> relativePath, int segmentIndex, AtomicBoolean stopFlag) {
         if (stopFlag.get()) {
             return;
         }
@@ -97,18 +120,32 @@ public class SingleIncludePatternFileTree extends AbstractMinimalFileTree {
                 String childName = child.getName();
                 if (step.matches(childName)) {
                     relativePath.addLast(childName);
-                    doVisitDirOrFile(visitor, child, relativePath, segmentIndex + 1, stopFlag);
+                    doVisitSymlinkOrDirOrFile(visitor, child, relativePath, segmentIndex + 1, stopFlag);
                     relativePath.removeLast();
                 }
             }
         } else {
             relativePath.addLast(segment);
-            doVisitDirOrFile(visitor, new File(file, segment), relativePath, segmentIndex + 1, stopFlag);
+            doVisitSymlinkOrDirOrFile(visitor, new File(file, segment), relativePath, segmentIndex + 1, stopFlag);
             relativePath.removeLast();
         }
     }
 
-    private void doVisitDirOrFile(FileVisitor visitor, File file, LinkedList<String> relativePath, int segmentIndex, AtomicBoolean stopFlag) {
+    private void doVisitSymlinkOrDirOrFile(SymlinkAwareFileVisitor visitor, File file, LinkedList<String> relativePath, int segmentIndex, AtomicBoolean stopFlag) {
+        if (Files.isSymbolicLink(file.toPath())) {
+            if (segmentIndex == patternSegments.size()) {
+                RelativePath path = new RelativePath(true, relativePath.toArray(new String[relativePath.size()]));
+                FileVisitDetails details = new DefaultFileVisitDetails(file, path, stopFlag, fileSystem, fileSystem);
+                if (!excludeSpec.isSatisfiedBy(details)) {
+                    visitor.visitSymbolicLink(details);
+                }
+            }
+        } else {
+            doVisitDirOrFile(visitor, file, relativePath, segmentIndex, stopFlag);
+        }
+    }
+
+    private void doVisitDirOrFile(SymlinkAwareFileVisitor visitor, File file, LinkedList<String> relativePath, int segmentIndex, AtomicBoolean stopFlag) {
         if (file.isFile()) {
             if (segmentIndex == patternSegments.size()) {
                 RelativePath path = new RelativePath(true, relativePath.toArray(new String[relativePath.size()]));
