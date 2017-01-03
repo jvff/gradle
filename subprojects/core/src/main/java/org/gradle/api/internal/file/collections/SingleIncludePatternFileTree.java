@@ -32,7 +32,9 @@ import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.nativeintegration.services.FileSystems;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -86,8 +88,37 @@ public class SingleIncludePatternFileTree implements MinimalFileTree {
         doVisit(symlinkAwareVisitor, baseDir, new LinkedList<String>(), 0, new AtomicBoolean());
     }
 
-    public void visitFollowingSymbolicLinks(FileVisitor visitor) {
-        throw new UnsupportedOperationException("Not yet implemented");
+    public void visitFollowingSymbolicLinks(final FileVisitor visitor) {
+        final AtomicBoolean stopFlag = new AtomicBoolean();
+        final LinkedList<String> relativePath = new LinkedList<String>();
+
+        SymlinkAwareFileVisitor symlinkFollowingVisitor = new SymlinkAwareFileVisitor() {
+            @Override
+            public void visitFile(FileVisitDetails fileDetails) {
+                visitor.visitFile(fileDetails);
+            }
+
+            @Override
+            public void visitDir(FileVisitDetails dirDetails) {
+                visitor.visitDir(dirDetails);
+            }
+
+            @Override
+            public void visitSymbolicLink(FileVisitDetails symbolicLinkDetails) {
+                Path symbolicLink = symbolicLinkDetails.getFile().toPath();
+
+                try {
+                    Path targetPath = Files.readSymbolicLink(symbolicLink);
+                    int segmentIndex = relativePath.size();
+
+                    doVisit(this, targetPath.toFile(), relativePath, segmentIndex, stopFlag);
+                } catch (IOException cause) {
+                    visitor.visitFile(symbolicLinkDetails);
+                }
+            }
+        };
+
+        doVisit(symlinkFollowingVisitor, baseDir, new LinkedList<String>(), 0, new AtomicBoolean());
     }
 
     public void visit(SymlinkAwareFileVisitor visitor) {
