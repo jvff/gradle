@@ -35,14 +35,6 @@ import java.util.Set;
 @HasInternalProtocol
 public interface FileTree extends FileCollection {
     /**
-     * Strategy for handling symbolic links. Either traverses the file/directory referenced by the symbolic link or
-     * traverses the symbolic link itself.
-     */
-    enum SymlinkStrategy {
-        FOLLOW, PRESERVE
-    }
-
-    /**
      * <p>Restricts the contents of this tree to those files matching the given filter. The filtered tree is live, so
      * that any changes to this tree are reflected in the filtered tree.</p>
      *
@@ -94,13 +86,13 @@ public interface FileTree extends FileCollection {
 
     /**
      * Visits the files and directories in this file tree. Files are visited in depth-first prefix order, so that a directory
-     * is visited before its children. Symbolic links are visited according to the {@link SymlinkStrategy}.
+     * is visited before its children. Symbolic links are visited according to the {@link SymbolicLinkStrategy}.
      *
      * @param visitor The visitor.
      * @param strategy The symbolic link traversal strategy.
      * @return this
      */
-    FileTree visit(FileVisitor visitor, SymlinkStrategy strategy);
+    FileTree visit(FileVisitor visitor, SymbolicLinkStrategy strategy);
 
     /**
      * Visits the files and directories in this file tree, allowing symbolic links to be handled separately. Files are
@@ -133,14 +125,14 @@ public interface FileTree extends FileCollection {
 
     /**
      * Visits the files and directories in this file tree. Files are visited in depth-first prefix order, so that a directory
-     * is visited before its children. Symbolic links are visited according to the specified {@link SymlinkStrategy}. The
-     * file/directory to be visited is passed to the given action as a {@link FileVisitDetails}
+     * is visited before its children. Symbolic links are visited according to the specified {@link SymbolicLinkStrategy}.
+     * The file/directory to be visited is passed to the given action as a {@link FileVisitDetails}
      *
      * @param visitor The visitor.
      * @param strategy The symbolic link traversal strategy.
      * @return this
      */
-    FileTree visit(Action<? super FileVisitDetails> visitor, SymlinkStrategy strategy);
+    FileTree visit(Action<? super FileVisitDetails> visitor, SymbolicLinkStrategy strategy);
 
     /**
      * Returns a {@code FileTree} which contains the union of this tree and the given tree. The returned tree is live,

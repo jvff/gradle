@@ -133,7 +133,7 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
         });
     }
 
-    public FileTree visit(Action<? super FileVisitDetails> visitor, SymlinkStrategy strategy) {
+    public FileTree visit(Action<? super FileVisitDetails> visitor, SymbolicLinkStrategy strategy) {
         return visit(visitor);
     }
 
@@ -158,8 +158,8 @@ public abstract class AbstractFileTree extends AbstractFileCollection implements
     }
 
     @Override
-    public FileTree visit(FileVisitor visitor, SymlinkStrategy strategy) {
-        if (strategy == SymlinkStrategy.PRESERVE)
+    public FileTree visit(FileVisitor visitor, SymbolicLinkStrategy strategy) {
+        if (strategy == SymbolicLinkStrategy.PRESERVE)
             return visit(visitor);
         else
             return visitFollowingSymbolicLinks(visitor);
