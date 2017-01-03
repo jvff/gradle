@@ -49,6 +49,8 @@ public interface CopySpecResolver {
 
     DuplicatesStrategy getDuplicatesStrategy();
 
+    SymbolicLinkStrategy getSymbolicLinkStrategy();
+
     void walk(Action<? super CopySpecResolver> action);
 
 

@@ -29,6 +29,7 @@ import org.gradle.api.file.FileCopyDetails;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymbolicLinkStrategy;
 import org.gradle.api.internal.ChainingTransformer;
 import org.gradle.api.internal.ClosureBackedAction;
 import org.gradle.api.internal.file.FileResolver;
@@ -68,6 +69,7 @@ public class DefaultCopySpec implements CopySpecInternal {
     private Boolean caseSensitive;
     private Boolean includeEmptyDirs;
     private DuplicatesStrategy duplicatesStrategy;
+    private SymbolicLinkStrategy symbolicLinkStrategy;
     private String filteringCharset;
     private List<CopySpecListener> listeners = Lists.newLinkedList();
 
@@ -257,6 +259,14 @@ public class DefaultCopySpec implements CopySpecInternal {
 
     public void setDuplicatesStrategy(DuplicatesStrategy strategy) {
         this.duplicatesStrategy = strategy;
+    }
+
+    public SymbolicLinkStrategy getSymbolicLinkStrategy() {
+        return buildRootResolver().getSymbolicLinkStrategy();
+    }
+
+    public void setSymbolicLinkStrategy(SymbolicLinkStrategy strategy) {
+        this.symbolicLinkStrategy = strategy;
     }
 
     public CopySpec filesMatching(String pattern, Action<? super FileCopyDetails> action) {
@@ -582,6 +592,16 @@ public class DefaultCopySpec implements CopySpecInternal {
                 return parentResolver.getDuplicatesStrategy();
             }
             return DuplicatesStrategy.INCLUDE;
+        }
+
+        public SymbolicLinkStrategy getSymbolicLinkStrategy() {
+            if (symbolicLinkStrategy != null) {
+                return symbolicLinkStrategy;
+            }
+            if (parentResolver != null) {
+                return parentResolver.getSymbolicLinkStrategy();
+            }
+            return SymbolicLinkStrategy.FOLLOW;
         }
 
 

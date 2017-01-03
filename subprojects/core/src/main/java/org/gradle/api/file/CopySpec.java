@@ -137,6 +137,19 @@ public interface CopySpec extends CopySourceSpec, CopyProcessingSpec, PatternFil
     void setDuplicatesStrategy(@Nullable DuplicatesStrategy strategy);
 
     /**
+     * Returns the strategy to use when trying to copy symbolic links.
+     *
+     * @return the strategy to use for files included by this spec.
+     * @see SymbolicLinkStrategy
+     */
+    SymbolicLinkStrategy getSymbolicLinkStrategy();
+
+    /**
+     * The stategy to use when trying to copy symbolic links.
+     */
+    void setSymbolicLinkStrategy(SymbolicLinkStrategy strategy);
+
+    /**
      * Configure the {@link org.gradle.api.file.FileCopyDetails} for each file whose path matches the specified Ant-style pattern.
      * This is equivalent to using eachFile() and selectively applying a configuration based on the file's path.
      *

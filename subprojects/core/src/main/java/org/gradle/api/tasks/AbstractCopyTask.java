@@ -26,6 +26,7 @@ import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileCopyDetails;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.FileTreeElement;
+import org.gradle.api.file.SymbolicLinkStrategy;
 import org.gradle.api.internal.ClosureBackedAction;
 import org.gradle.api.internal.ConventionTask;
 import org.gradle.api.internal.file.FileLookup;
@@ -249,6 +250,20 @@ public abstract class AbstractCopyTask extends ConventionTask implements CopySpe
     @Internal
     public DuplicatesStrategy getDuplicatesStrategy() {
         return getRootSpec().getDuplicatesStrategy();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setSymbolicLinkStrategy(SymbolicLinkStrategy strategy) {
+        getRootSpec().setSymbolicLinkStrategy(strategy);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public SymbolicLinkStrategy getSymbolicLinkStrategy() {
+        return getRootSpec().getSymbolicLinkStrategy();
     }
 
     /**

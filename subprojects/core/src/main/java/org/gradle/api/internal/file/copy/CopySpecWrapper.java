@@ -26,6 +26,7 @@ import org.gradle.api.file.CopySpec;
 import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileCopyDetails;
 import org.gradle.api.file.FileTreeElement;
+import org.gradle.api.file.SymbolicLinkStrategy;
 import org.gradle.api.internal.ClosureBackedAction;
 import org.gradle.api.specs.Spec;
 
@@ -70,6 +71,14 @@ public class CopySpecWrapper implements CopySpec {
 
     public void setDuplicatesStrategy(@Nullable DuplicatesStrategy strategy) {
         delegate.setDuplicatesStrategy(strategy);
+    }
+
+    public SymbolicLinkStrategy getSymbolicLinkStrategy() {
+        return delegate.getSymbolicLinkStrategy();
+    }
+
+    public void setSymbolicLinkStrategy(SymbolicLinkStrategy strategy) {
+        delegate.setSymbolicLinkStrategy(strategy);
     }
 
     public CopySpec filesMatching(String pattern, Action<? super FileCopyDetails> action) {
