@@ -24,6 +24,8 @@ import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.util.GFileUtils;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public abstract class AbstractFileTreeElement implements FileTreeElement {
     private final Chmod chmod;
@@ -63,6 +65,9 @@ public abstract class AbstractFileTreeElement implements FileTreeElement {
 
     public void copyTo(OutputStream output) {
         try {
+            if (getType() != Type.REGULAR_FILE)
+                throw new GradleException("Can't copy directory to output stream.");
+
             InputStream inputStream = open();
             try {
                 IOUtils.copyLarge(inputStream, output);
@@ -77,8 +82,11 @@ public abstract class AbstractFileTreeElement implements FileTreeElement {
     public boolean copyTo(File target) {
         validateTimeStamps();
         try {
-            if (isDirectory()) {
+            if (getType() == Type.DIRECTORY) {
                 GFileUtils.mkdirs(target);
+            } else if (getType() == Type.SYMBOLIC_LINK) {
+                GFileUtils.mkdirs(target.getParentFile());
+                copySymbolicLink(target);
             } else {
                 GFileUtils.mkdirs(target.getParentFile());
                 copyFile(target);
@@ -103,6 +111,27 @@ public abstract class AbstractFileTreeElement implements FileTreeElement {
             copyTo(outputStream);
         } finally {
             outputStream.close();
+        }
+    }
+
+    private void copySymbolicLink(File target) {
+        Path targetPath = getSymbolicLinkTarget();
+
+        try {
+            Files.createSymbolicLink(target.toPath(), targetPath);
+        } catch (Exception cause) {
+            String message = String.format("Failed to create symbolic link '%s' to '%s'.", getFile(), targetPath);
+            throw new GradleException(message, cause);
+        }
+    }
+
+    private Path getSymbolicLinkTarget() {
+        File file = getFile();
+
+        try {
+            return Files.readSymbolicLink(file.toPath());
+        } catch (Exception cause) {
+            throw new GradleException(String.format("Failed to read '%s' as a symbolic link.", file), cause);
         }
     }
 
