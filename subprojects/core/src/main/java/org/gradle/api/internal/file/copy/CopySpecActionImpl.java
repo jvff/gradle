@@ -17,6 +17,8 @@ package org.gradle.api.internal.file.copy;
 
 import org.gradle.api.Action;
 import org.gradle.api.file.FileTree;
+import org.gradle.api.file.FileVisitor;
+import org.gradle.api.file.SymbolicLinkStrategy;
 import org.gradle.api.internal.file.CopyActionProcessingStreamAction;
 import org.gradle.internal.nativeintegration.filesystem.FileSystem;
 import org.gradle.internal.reflect.Instantiator;
@@ -34,6 +36,9 @@ public class CopySpecActionImpl implements Action<CopySpecResolver> {
 
     public void execute(final CopySpecResolver specResolver) {
         FileTree source = specResolver.getSource();
-        source.visit(new CopyFileVisitorImpl(specResolver, action, instantiator, fileSystem));
+        SymbolicLinkStrategy symbolicLinkStrategy = specResolver.getSymbolicLinkStrategy();
+        FileVisitor visitor = new CopyFileVisitorImpl(specResolver, action, instantiator, fileSystem);
+
+        source.visit(visitor, symbolicLinkStrategy);
     }
 }
