@@ -17,6 +17,7 @@ package org.gradle.api.internal.file.copy
 
 import org.gradle.api.Action
 import org.gradle.api.file.FileTree
+import org.gradle.api.file.SymbolicLinkStrategy
 import org.gradle.api.internal.file.CopyActionProcessingStreamAction
 import org.gradle.internal.nativeintegration.filesystem.FileSystem
 import org.gradle.internal.reflect.Instantiator
@@ -28,6 +29,7 @@ class CopySpecActionImplTest extends Specification {
     FileSystem fileSystem = Mock()
     CopySpecResolver copySpecResolver = Mock()
     FileTree source = Mock()
+    SymbolicLinkStrategy symbolicLinkStrategy = SymbolicLinkStrategy.FOLLOW
     Action<CopySpecInternal> copySpecInternalAction
 
     def setup() {
@@ -40,6 +42,7 @@ class CopySpecActionImplTest extends Specification {
 
         then:
         1 * copySpecResolver.getSource() >> source
-        1 * source.visit(_ as CopyFileVisitorImpl)
+        1 * copySpecResolver.getSymbolicLinkStrategy() >> symbolicLinkStrategy
+        1 * source.visit(_ as CopyFileVisitorImpl, symbolicLinkStrategy)
     }
 }
