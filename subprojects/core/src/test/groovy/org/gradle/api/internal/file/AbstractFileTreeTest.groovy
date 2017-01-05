@@ -175,5 +175,12 @@ public class AbstractFileTreeTest extends Specification {
             }
             this
         }
+
+        FileTree visitFollowingSymbolicLinks(FileVisitor visitor) {
+            contents.each { FileVisitDetails details ->
+                visitor.visitFile(details)
+            }
+            this
+        }
     }
 }
