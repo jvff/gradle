@@ -21,6 +21,7 @@ import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.FileVisitDetails;
 import org.gradle.api.file.FileVisitor;
 import org.gradle.api.file.RelativePath;
+import org.gradle.api.file.SymbolicLinkStrategy;
 import org.gradle.api.file.SymlinkAwareFileVisitor;
 import org.gradle.api.internal.file.DefaultFileVisitDetails;
 import org.gradle.api.specs.Spec;
@@ -57,15 +58,15 @@ public class DefaultDirectoryWalker implements DirectoryWalker {
                 throw new GradleException(String.format("Could not list contents of '%s'. Couldn't follow symbolic link.", symbolicLinkDetails.getFile()));
             }
         };
-        walkDir(file, path, symlinkAwareVisitor, spec, stopFlag, postfix, true);
+        walkDir(file, path, symlinkAwareVisitor, spec, stopFlag, postfix, SymbolicLinkStrategy.FOLLOW);
     }
 
     @Override
     public void walkDir(File file, RelativePath path, SymlinkAwareFileVisitor visitor, Spec<? super FileTreeElement> spec, AtomicBoolean stopFlag, boolean postfix) {
-        walkDir(file, path, visitor, spec, stopFlag, postfix, false);
+        walkDir(file, path, visitor, spec, stopFlag, postfix, SymbolicLinkStrategy.PRESERVE);
     }
 
-    private void walkDir(File file, RelativePath path, SymlinkAwareFileVisitor visitor, Spec<? super FileTreeElement> spec, AtomicBoolean stopFlag, boolean postfix, boolean followSymbolicLinks) {
+    private void walkDir(File file, RelativePath path, SymlinkAwareFileVisitor visitor, Spec<? super FileTreeElement> spec, AtomicBoolean stopFlag, boolean postfix, SymbolicLinkStrategy symbolicLinkStrategy) {
         File[] children = file.listFiles();
         if (children == null) {
             if (file.isDirectory() && !file.canRead()) {
@@ -83,7 +84,7 @@ public class DefaultDirectoryWalker implements DirectoryWalker {
             FileVisitDetails details = new DefaultFileVisitDetails(child, childPath, stopFlag, fileSystem, fileSystem, !isFile);
             if (DirectoryFileTree.isAllowed(details, spec)) {
                 if (isSymbolicLink) {
-                    visitSymbolicLink(child, details, stopFlag, fileSystem, followSymbolicLinks, visitor, dirs);
+                    visitSymbolicLink(child, details, stopFlag, fileSystem, symbolicLinkStrategy, visitor, dirs);
                 } else if (isFile) {
                     visitor.visitFile(details);
                 } else {
@@ -96,17 +97,17 @@ public class DefaultDirectoryWalker implements DirectoryWalker {
         for (int i = 0; !stopFlag.get() && i < dirs.size(); i++) {
             FileVisitDetails dir = dirs.get(i);
             if (postfix) {
-                walkDir(dir.getFile(), dir.getRelativePath(), visitor, spec, stopFlag, postfix, followSymbolicLinks);
+                walkDir(dir.getFile(), dir.getRelativePath(), visitor, spec, stopFlag, postfix, symbolicLinkStrategy);
                 visitor.visitDir(dir);
             } else {
                 visitor.visitDir(dir);
-                walkDir(dir.getFile(), dir.getRelativePath(), visitor, spec, stopFlag, postfix, followSymbolicLinks);
+                walkDir(dir.getFile(), dir.getRelativePath(), visitor, spec, stopFlag, postfix, symbolicLinkStrategy);
             }
         }
     }
 
-    private void visitSymbolicLink(File child, FileVisitDetails details, AtomicBoolean stopFlag, FileSystem fileSystem, boolean followSymbolicLinks, SymlinkAwareFileVisitor visitor, List<FileVisitDetails> dirs) {
-        if (followSymbolicLinks) {
+    private void visitSymbolicLink(File child, FileVisitDetails details, AtomicBoolean stopFlag, FileSystem fileSystem, SymbolicLinkStrategy strategy, SymlinkAwareFileVisitor visitor, List<FileVisitDetails> dirs) {
+        if (strategy == SymbolicLinkStrategy.FOLLOW) {
             File target = resolveSymbolicLink(child);
             boolean isFile = target.isFile();
             FileVisitDetails targetDetails = new DefaultFileVisitDetails(child, details.getRelativePath(), stopFlag, fileSystem, fileSystem, !isFile);
