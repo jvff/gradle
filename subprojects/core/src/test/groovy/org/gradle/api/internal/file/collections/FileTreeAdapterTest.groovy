@@ -17,7 +17,7 @@ package org.gradle.api.internal.file.collections
 
 import org.gradle.api.Buildable
 import org.gradle.api.file.FileVisitDetails
-import org.gradle.api.file.FileVisitor
+import org.gradle.api.file.SymlinkAwareFileVisitor
 import org.gradle.api.internal.file.FileCollectionVisitor
 import org.gradle.api.tasks.TaskDependency
 import org.gradle.api.tasks.util.PatternFilterable
@@ -39,7 +39,7 @@ class FileTreeAdapterTest extends Specification {
     def visitDelegatesToTargetTree() {
         MinimalFileTree tree = Mock()
         FileTreeAdapter adapter = new FileTreeAdapter(tree)
-        FileVisitor visitor = Mock()
+        SymlinkAwareFileVisitor visitor = Mock()
 
         when:
         adapter.visit(visitor)
