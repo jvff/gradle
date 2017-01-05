@@ -51,7 +51,9 @@ class DuplicateHandlingCopyActionExecutorTest extends Specification {
     def copySpec = Mock(MyCopySpec) {
         getChildren() >> []
     }
-    def copySpecResolver = Mock(CopySpecResolver)
+    def copySpecResolver = Mock(CopySpecResolver) {
+        getSymbolicLinkStrategy() >> SymbolicLinkStrategy.FOLLOW
+    }
 
     def duplicatesIncludedByDefault() {
         given:
@@ -174,7 +176,8 @@ class DuplicateHandlingCopyActionExecutorTest extends Specification {
         copySpecResolver.destPath >> new RelativePath(false, '/root')
         def fileTree = Mock(FileTree)
         copySpecResolver.getSource() >> fileTree
-        fileTree.visit(_ as FileVisitor) >> { FileVisitor visitor ->
+        fileTree.visit(_ as FileVisitor, _ as SymbolicLinkStrategy) >> { FileVisitor visitor, SymbolicLinkStrategy _ ->
+            System.err.println("fileTree.visit()")
             fileNames.each { filename ->
                 def fvd = Mock(FileVisitDetails) {
                     getRelativePath() >> new RelativePath(true, filename)
