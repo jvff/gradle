@@ -20,6 +20,7 @@ import org.gradle.api.file.FileTree
 import org.gradle.api.file.FileVisitDetails
 import org.gradle.api.file.FileVisitor
 import org.gradle.api.file.RelativePath
+import org.gradle.api.file.SymlinkAwareFileVisitor
 import org.gradle.api.tasks.TaskDependency
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.util.UsesNativeServices
@@ -162,6 +163,13 @@ public class AbstractFileTreeTest extends Specification {
         }
 
         FileTree visit(FileVisitor visitor) {
+            contents.each { FileVisitDetails details ->
+                visitor.visitFile(details)
+            }
+            this
+        }
+
+        FileTree visit(SymlinkAwareFileVisitor visitor) {
             contents.each { FileVisitDetails details ->
                 visitor.visitFile(details)
             }
