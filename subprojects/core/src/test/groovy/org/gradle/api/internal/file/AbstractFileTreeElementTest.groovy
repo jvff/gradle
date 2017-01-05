@@ -87,7 +87,7 @@ class AbstractFileTreeElementTest extends AbstractProjectBuilderSpec {
         }
 
         public TestFileTreeElement(TestFile file, Integer mode, Chmod chmod) {
-            super(chmod)
+            super(chmod, file.isDirectory() ? Type.DIRECTORY : Type.REGULAR_FILE)
             this.file = file
             this.mode = mode
         }
